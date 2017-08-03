@@ -4,6 +4,7 @@ import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -156,10 +157,10 @@ public class ChooseAreaFragment extends Fragment {
      * 查询全国所有的县，优先从数据库中查询，如果没有去服务器查询
      */
     private void queryCounties() {
-        titleText.setText(selectProvince.getProvinceName());
+        titleText.setText(selectCity.getCityName());
         btnBack.setVisibility(View.VISIBLE);
         countyList = DataSupport.where("cityid= ?", String.valueOf(selectCity.getId())).find(County.class);
-        if (cityList.size() > 0) {
+        if (countyList.size() > 0) {
             dataList.clear();
             for (County county :
                     countyList) {
@@ -171,6 +172,7 @@ public class ChooseAreaFragment extends Fragment {
         } else {
             int provinceCode = selectProvince.getProvinceCode();
             int cityCode = selectCity.getCityCode();
+            Log.d("Test", "queryCounties: "+cityCode);
             String address = "http://guolin.tech/api/china/" + provinceCode + "/" + cityCode;
             queryFromServer(address, "county");
         }
