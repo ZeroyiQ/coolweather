@@ -28,7 +28,6 @@ import okhttp3.Response;
 import top.zeroyiq.coolweather.db.City;
 import top.zeroyiq.coolweather.db.County;
 import top.zeroyiq.coolweather.db.Province;
-import top.zeroyiq.coolweather.gson.Weather;
 import top.zeroyiq.coolweather.util.HttpUtil;
 import top.zeroyiq.coolweather.util.Utility;
 
@@ -96,7 +95,7 @@ public class ChooseAreaFragment extends Fragment {
                 } else if (currentLevel == LEVEL_COUNTY) {
                     String weatherId = countyList.get(position).getWeatherId();
                     Intent intent = new Intent(getActivity(), WeatherActivity.class);
-                    intent.putExtra("weater_id", weatherId);
+                    intent.putExtra("weather_id", weatherId);
                     startActivity(intent);
                     getActivity().finish();
 

@@ -56,14 +56,14 @@ public class WeatherActivity extends AppCompatActivity {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         // 查看缓存
         String weatherString = preferences.getString("weather", null);
-        if (weatherString != null) {
-            Weather weather = Utility.handleWeatherResponse(weatherString);     // 有缓存直接解析
-            showWeatherInfo(weather);
-        } else {
+//        if (weatherString != null) {
+//            Weather weather = Utility.handleWeatherResponse(weatherString);     // 有缓存直接解析
+//            showWeatherInfo(weather);
+//        } else {
             String weatherId = getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
-        }
+//        }
     }
 
     /**
