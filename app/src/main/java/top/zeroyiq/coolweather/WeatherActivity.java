@@ -6,15 +6,20 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+
 import java.io.IOException;
+import java.util.Objects;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -47,6 +52,14 @@ public class WeatherActivity extends AppCompatActivity {
     TextView tvSport;
     @BindView(R.id.weather_layout)
     ScrollView weatherLayout;
+    @BindView(R.id.img_bing_pic)
+    ImageView bingImg;
+
+    @OnClick(R.id.btn_title_back)
+    void titleBack() {
+        this.finish();
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,24 +68,61 @@ public class WeatherActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         // 查看缓存
-        String weatherString = preferences.getString("weather", null);
-//        if (weatherString != null) {
-//            Weather weather = Utility.handleWeatherResponse(weatherString);     // 有缓存直接解析
-//            showWeatherInfo(weather);
-//        } else {
-            String weatherId = getIntent().getStringExtra("weather_id");
+        String prefWeather = preferences.getString("weather", null);
+        String prefWeatherId = preferences.getString("id", null);
+        String weatherId = getIntent().getStringExtra("weather_id");
+        if (prefWeather != null && Objects.equals(prefWeatherId, weatherId)) {
+            Weather weather = Utility.handleWeatherResponse(prefWeather);     // 有缓存直接解析
+            showWeatherInfo(weather);
+        } else {
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
-//        }
+        }
+
+        String bingPic = preferences.getString("bing_pic", null);
+        if (bingPic != null) {
+            Glide.with(this).load(bingPic).into(bingImg);
+        } else {
+            loadBingPic();
+        }
+    }
+
+    /**
+     * 加载 Bing 每日图片
+     */
+    private void loadBingPic() {
+        String requestBingPic = "http://guolin.tech/api/bing_pic";
+        HttpUtil.sendOkHttpRequest(requestBingPic, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+                Toast.makeText(WeatherActivity.this, "每日一图加载失败", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String bingPic = response.body().string();
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+                editor.putString("bing_pic", bingPic);
+                editor.apply();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Glide.with(WeatherActivity.this).load(bingPic).into(bingImg);
+                    }
+                });
+            }
+        });
     }
 
     /**
      * 根据天气 id 请求城市天气信息
+     *
      * @param weatherId
      */
     private void requestWeather(final String weatherId) {
         String weatherUri = "http://guolin.tech/api/weather?cityid=" + weatherId + "&key=9f0860ac30cc4a12bf58d4e9cc38c98a";
-        HttpUtil.sendOkHtttpRequst(weatherUri, new Callback() {
+        HttpUtil.sendOkHttpRequest(weatherUri, new Callback() {
                     @Override
                     public void onFailure(Call call, IOException e) {
                         Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
@@ -89,6 +139,7 @@ public class WeatherActivity extends AppCompatActivity {
                                     SharedPreferences.Editor editor = PreferenceManager.
                                             getDefaultSharedPreferences(WeatherActivity.this).edit();
                                     editor.putString("weather", responseText);
+                                    editor.putString("id", weatherId);
                                     editor.apply();
                                     showWeatherInfo(weather);
                                 } else {
@@ -99,10 +150,12 @@ public class WeatherActivity extends AppCompatActivity {
                     }
                 }
         );
+        loadBingPic();
     }
 
     /**
      * 将 Weather 中的信息展示出来
+     *
      * @param weather
      */
     private void showWeatherInfo(Weather weather) {

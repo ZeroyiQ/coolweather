@@ -178,7 +178,7 @@ public class ChooseAreaFragment extends Fragment {
         } else {
             int provinceCode = selectProvince.getProvinceCode();
             int cityCode = selectCity.getCityCode();
-            Log.d("Test", "queryCounties: "+cityCode);
+            Log.d("Test", "queryCounties: " + cityCode);
             String address = "http://guolin.tech/api/china/" + provinceCode + "/" + cityCode;
             queryFromServer(address, "county");
         }
@@ -192,7 +192,7 @@ public class ChooseAreaFragment extends Fragment {
      */
     private void queryFromServer(String address, final String type) {
         showProgressDialog();
-        HttpUtil.sendOkHtttpRequst(address, new Callback() {
+        HttpUtil.sendOkHttpRequest(address, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
                 // 通过 runOnUiThread 回到主线程处理 UI
@@ -212,7 +212,7 @@ public class ChooseAreaFragment extends Fragment {
                 if ("province".equals(type)) {
                     result = Utility.handleProvinceResponse(responseText);
                 } else if ("city".equals(type)) {
-                    result = Utility.handleCityResponse(responseText,selectProvince.getId());
+                    result = Utility.handleCityResponse(responseText, selectProvince.getId());
                 } else if ("county".equals(type)) {
                     result = Utility.handleCountyResponse(responseText, selectCity.getId());
                 }
