@@ -1,8 +1,12 @@
 package top.zeroyiq.coolweather;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,7 +19,6 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 
 import java.io.IOException;
-import java.util.Objects;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -54,10 +57,15 @@ public class WeatherActivity extends AppCompatActivity {
     ScrollView weatherLayout;
     @BindView(R.id.img_bing_pic)
     ImageView bingImg;
+    @BindView(R.id.swipe_refresh)
+    SwipeRefreshLayout swipeRefreshLayout;
+    @BindView(R.id.drawer_layout)
+    DrawerLayout drawerLayout;
 
-    @OnClick(R.id.btn_title_back)
+
+    @OnClick(R.id.btn_title_change)
     void titleBack() {
-        this.finish();
+        drawerLayout.openDrawer(GravityCompat.START);
     }
 
 
@@ -66,25 +74,47 @@ public class WeatherActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather);
         ButterKnife.bind(this);
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        // 将状态栏与背景图融为一体
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+
+
+
         // 查看缓存
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        // 天气缓存
         String prefWeather = preferences.getString("weather", null);
-        String prefWeatherId = preferences.getString("id", null);
-        String weatherId = getIntent().getStringExtra("weather_id");
-        if (prefWeather != null && Objects.equals(prefWeatherId, weatherId)) {
-            Weather weather = Utility.handleWeatherResponse(prefWeather);     // 有缓存直接解析
+        final String weatherId;
+        if (prefWeather != null) {
+            Weather weather = Utility.handleWeatherResponse(prefWeather);   // 有缓存直接解析
+            weatherId = weather.basic.weatherId;
             showWeatherInfo(weather);
         } else {
+            weatherId = getIntent().getStringExtra("weather_id");           // 无缓存去服务器上查询
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
         }
+        // 下拉刷新
+        swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(weatherId);
+            }
+        });
 
+        // 图片缓存
         String bingPic = preferences.getString("bing_pic", null);
         if (bingPic != null) {
             Glide.with(this).load(bingPic).into(bingImg);
         } else {
             loadBingPic();
         }
+
+
     }
 
     /**
@@ -120,12 +150,13 @@ public class WeatherActivity extends AppCompatActivity {
      *
      * @param weatherId
      */
-    private void requestWeather(final String weatherId) {
+    public void requestWeather(final String weatherId) {
         String weatherUri = "http://guolin.tech/api/weather?cityid=" + weatherId + "&key=9f0860ac30cc4a12bf58d4e9cc38c98a";
         HttpUtil.sendOkHttpRequest(weatherUri, new Callback() {
                     @Override
                     public void onFailure(Call call, IOException e) {
                         Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                        swipeRefreshLayout.setRefreshing(false);
                     }
 
                     @Override
@@ -139,12 +170,12 @@ public class WeatherActivity extends AppCompatActivity {
                                     SharedPreferences.Editor editor = PreferenceManager.
                                             getDefaultSharedPreferences(WeatherActivity.this).edit();
                                     editor.putString("weather", responseText);
-                                    editor.putString("id", weatherId);
                                     editor.apply();
                                     showWeatherInfo(weather);
                                 } else {
                                     Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
                                 }
+                                swipeRefreshLayout.setRefreshing(false);
                             }
                         });
                     }
