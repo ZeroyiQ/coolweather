@@ -1,5 +1,6 @@
 package top.zeroyiq.coolweather;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -28,6 +29,7 @@ import okhttp3.Callback;
 import okhttp3.Response;
 import top.zeroyiq.coolweather.gson.Forecast;
 import top.zeroyiq.coolweather.gson.Weather;
+import top.zeroyiq.coolweather.service.AutoUpdateService;
 import top.zeroyiq.coolweather.util.HttpUtil;
 import top.zeroyiq.coolweather.util.Utility;
 
@@ -92,6 +94,7 @@ public class WeatherActivity extends AppCompatActivity {
             Weather weather = Utility.handleWeatherResponse(prefWeather);   // 有缓存直接解析
             weatherId = weather.basic.weatherId;
             showWeatherInfo(weather);
+
         } else {
             weatherId = getIntent().getStringExtra("weather_id");           // 无缓存去服务器上查询
             weatherLayout.setVisibility(View.INVISIBLE);
@@ -233,5 +236,7 @@ public class WeatherActivity extends AppCompatActivity {
         tvCw.setText(carWash);
         tvSport.setText(sport);
         weatherLayout.setVisibility(View.VISIBLE);
+        Intent intent = new Intent(this, AutoUpdateService.class);
+        startService(intent);
     }
 }
